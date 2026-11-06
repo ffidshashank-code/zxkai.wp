@@ -770,6 +770,6 @@ Optional template: the project does not run this review on a schedule.
 
 <div align="center">
 
-[← 15 - Project Roadmap](./15-project-roadmap.md) · [Documentation Index](./README.md) · [Next: 17 - Dashboard Design →](./17-dashboard-design.md)
+[← 15 - Project Roadmap](./15-project-roadmap.md) · [Documentation Index](./INDEX.md) · [Next: 17 - Dashboard Design →](./17-dashboard-design.md)
 
 </div>

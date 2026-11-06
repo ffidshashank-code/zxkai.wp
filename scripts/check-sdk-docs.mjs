@@ -15,8 +15,8 @@
  *
  * SCOPE, stated so the guarantee is not read wider than it is:
  *   - Method-level for the five sites that enumerate methods: `docs/18` §18.1 and its §18.2/§18.3/
- *     §18.4 per-language tables, and `sdk/README.md`'s Coverage table.
- *   - Resource-level only for `sdk/java/README.md` and `sdk/go/README.md`, which list resources and
+ *     §18.4 per-language tables, and `sdk/GUIDE.md`'s Coverage table.
+ *   - Resource-level only for `sdk/java/GUIDE.md` and `sdk/go/GUIDE.md`, which list resources and
  *     deliberately delegate their method tables (docs/18 lines 12-13).
  *   - Compares the SET of names in each language's own idiom — Python snake_case, everyone else
  *     camelCase. It does NOT check signatures, descriptions or **OPERATOR** annotations, which carry
@@ -170,8 +170,8 @@ function main() {
       missingSection: resource => `no \`#### ${resource}\` section`,
     },
     {
-      label: 'sdk/README.md Coverage',
-      text: slice(read('sdk/README.md'), '## Coverage', '\n## '),
+      label: 'sdk/GUIDE.md Coverage',
+      text: slice(read('sdk/GUIDE.md'), '## Coverage', '\n## '),
       lookup: (text, resource) => summaryRow(text, resource),
       missingSection: resource => `\`${resource}\` has no row (${shipped.get(resource).length} methods ship)`,
     },
@@ -196,13 +196,13 @@ function main() {
   // Resource-level only: these two delegate their method tables to the language's own idiom.
   const RESOURCE_LISTS = [
     {
-      label: 'sdk/java/README.md',
-      text: slice(read('sdk/java/README.md'), '## Resources', '\n## '),
+      label: 'sdk/java/GUIDE.md',
+      text: slice(read('sdk/java/GUIDE.md'), '## Resources', '\n## '),
       token: r => `\`${r}\``,
     },
     {
-      label: 'sdk/go/README.md',
-      text: read('sdk/go/README.md'),
+      label: 'sdk/go/GUIDE.md',
+      text: read('sdk/go/GUIDE.md'),
       token: r => `client.${r.charAt(0).toUpperCase()}${r.slice(1)}`,
     },
   ];

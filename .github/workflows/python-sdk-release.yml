@@ -6,7 +6,7 @@ name: Python SDK Release
 # workflow or in the repository secrets. PyPI mints a short-lived credential from the GitHub OIDC
 # token, so nothing long-lived exists to leak or rotate. Same arrangement as js-sdk-release.yml.
 #
-# One-time setup on pypi.org (see sdk/python/README.md -> Releasing), required BEFORE the first tag:
+# One-time setup on pypi.org (see sdk/python/GUIDE.md -> Releasing), required BEFORE the first tag:
 # project settings -> Publishing -> add a GitHub trusted publisher with owner `rmyndharis`,
 # repository `OpenWA`, and workflow `python-sdk-release.yml`.
 #

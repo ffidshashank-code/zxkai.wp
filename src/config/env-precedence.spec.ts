@@ -333,7 +333,7 @@ describe('every key the dashboard writes is commented out in .env.example', () =
   });
 
   /**
-   * `.env.minimal` is also copied to `.env` by the docs (docs/README.md), but its rule is NARROWER on
+   * `.env.minimal` is also copied to `.env` by the docs (docs/INDEX.md), but its rule is NARROWER on
    * purpose: it describes itself as a development/personal config and deliberately pins the choices an
    * operator makes by hand there — DATABASE_TYPE, ENGINE_TYPE, the puppeteer flags. Those pins are the
    * file's reason to exist.

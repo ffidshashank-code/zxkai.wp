@@ -12,15 +12,15 @@ import { SEND_503 } from './openapi/engine-status-responses';
 const root = join(__dirname, '..', '..');
 
 const SDK_503_TEXTS = [
-  'sdk/go/README.md',
+  'sdk/go/GUIDE.md',
   'sdk/go/errors.go',
-  'sdk/java/README.md',
+  'sdk/java/GUIDE.md',
   'sdk/java/src/main/java/com/rmyndharis/openwa/errors/OpenWAServiceUnavailableError.java',
-  'sdk/php/README.md',
+  'sdk/php/GUIDE.md',
   'sdk/php/src/Exceptions/OpenWAServiceUnavailableException.php',
-  'sdk/javascript/README.md',
+  'sdk/javascript/GUIDE.md',
   'sdk/javascript/src/errors.ts',
-  'sdk/python/README.md',
+  'sdk/python/GUIDE.md',
   'sdk/python/openwa/errors.py',
   'docs/18-sdk-design.md',
 ];

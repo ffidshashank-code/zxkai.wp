@@ -1659,6 +1659,6 @@ When creating GitHub issue, include:
 
 <div align="center">
 
-[← 11 - Operational Runbooks](./11-operational-runbooks.md) · [Documentation Index](./README.md) · [Next: 13 - Horizontal Scaling Guide →](./13-horizontal-scaling.md)
+[← 11 - Operational Runbooks](./11-operational-runbooks.md) · [Documentation Index](./INDEX.md) · [Next: 13 - Horizontal Scaling Guide →](./13-horizontal-scaling.md)
 
 </div>

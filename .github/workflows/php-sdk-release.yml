@@ -115,7 +115,7 @@ jobs:
           # workflow re-runs on the next push, while a release that silently publishes nothing is
           # indistinguishable from one that worked.
           if [ -z "${SPLIT_TOKEN:-}" ]; then
-            echo "::error::PHP_SDK_SPLIT_TOKEN is not set — cannot tag the mirror. Configure it (see sdk/php/README.md -> Releasing) before tagging a release."
+            echo "::error::PHP_SDK_SPLIT_TOKEN is not set — cannot tag the mirror. Configure it (see sdk/php/GUIDE.md -> Releasing) before tagging a release."
             exit 1
           fi
           VERSION="${REF_NAME#php-sdk-v}"

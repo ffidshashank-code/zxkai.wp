@@ -515,7 +515,7 @@ test('schemaCoverageProblems accepts a recorded schema and rejects a record that
 });
 
 test('exposedSchemas reads a README entry with a sub-path as a path prefix, not as the whole resource', () => {
-  // sdk/README.md lists `auth/api-keys` and says key validation itself is exposed. Unexposing the resource
+  // sdk/GUIDE.md lists `auth/api-keys` and says key validation itself is exposed. Unexposing the resource
   // `auth` dropped POST /api/auth/validate too, so its response schema was never required to be compared.
   // `automation` unexposes the automation-rules routes, whose segment carries a suffix.
   const spec = {
@@ -553,7 +553,7 @@ test('unexposedResources reads the README paragraph as written and refuses a REA
   );
   // The real README must still parse, or the coverage check has lost its scope: key validation is in it,
   // the key management routes are not.
-  const real = unexposedResources(readFileSync(fileURLToPath(new URL('../sdk/README.md', import.meta.url)), 'utf8'));
+  const real = unexposedResources(readFileSync(fileURLToPath(new URL('../sdk/GUIDE.md', import.meta.url)), 'utf8'));
   assert.ok(real.has('audit'));
   assert.ok(real.has('auth/api-keys') && !real.has('auth'));
   const openapi = JSON.parse(readFileSync(fileURLToPath(new URL('../openapi.json', import.meta.url)), 'utf8'));
@@ -592,7 +592,7 @@ function runGateOnCopy({
     } else {
       const modelDir = ['sdk', 'java', 'src', 'main', 'java', 'com', 'rmyndharis', 'openwa', 'model'];
       const sources = [
-        ['sdk', 'README.md'],
+        ['sdk', 'GUIDE.md'],
         ['sdk', 'javascript', 'src', 'types.ts'],
         ['sdk', 'python', 'openwa', 'types.py'],
         ...readdirSync(join(gateRoot, 'sdk', 'go'))

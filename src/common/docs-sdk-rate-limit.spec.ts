@@ -8,9 +8,9 @@ import { join } from 'node:path';
  */
 describe('SDK READMEs: global rate limiter 429 duration', () => {
   const repoRoot = join(__dirname, '..', '..');
-  const readmes = ['javascript', 'python', 'php', 'go', 'java'].map(sdk => `sdk/${sdk}/README.md`);
+  const guides = ['javascript', 'python', 'php', 'go', 'java'].map(sdk => `sdk/${sdk}/GUIDE.md`);
 
-  it.each(readmes)('%s names the hourly tier and no seconds-only promise', path => {
+  it.each(guides)('%s names the hourly tier and no seconds-only promise', path => {
     const text = readFileSync(join(repoRoot, path), 'utf8').replace(/\s+/g, ' ');
     expect(text).toContain('up to an hour for the hourly tier by default');
     expect(text).not.toMatch(/clears within seconds/);

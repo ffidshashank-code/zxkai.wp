@@ -664,7 +664,7 @@ PR, and pushing the tag from `main` hands everything else to `.github/workflows/
   the release commit: every `next` in the Release column of the Known Upgrade Hazards table in
   `docs/14-migration-guide.md`, one for each hazard the release added, and every clause that says
   "after OpenWA <last>", "the release after <last>" or "newer than <last>", such as line 3 of
-  `sdk/README.md`, `docs/18-sdk-design.md` and the SDK READMEs, which becomes "<version> or later".
+  `sdk/GUIDE.md`, `docs/18-sdk-design.md` and the SDK READMEs, which becomes "<version> or later".
   `npm run test:docs` fails on a `next` row once `[Unreleased]` is empty, so a release commit that
   skips this fails its own CI.
 
@@ -873,6 +873,6 @@ build from source and tag the result with the published image name.
 
 <div align="center">
 
-[← 14 - Migration Guide](./14-migration-guide.md) · [Documentation Index](./README.md) · [Next: 16 - Risk Management →](./16-risk-management.md)
+[← 14 - Migration Guide](./14-migration-guide.md) · [Documentation Index](./INDEX.md) · [Next: 16 - Risk Management →](./16-risk-management.md)
 
 </div>

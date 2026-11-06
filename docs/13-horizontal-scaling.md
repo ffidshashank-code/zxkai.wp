@@ -851,6 +851,6 @@ groups:
 
 <div align="center">
 
-[← 12 - Troubleshooting & FAQ](./12-troubleshooting-faq.md) · [Documentation Index](./README.md) · [Next: 14 - Migration Guide →](./14-migration-guide.md)
+[← 12 - Troubleshooting & FAQ](./12-troubleshooting-faq.md) · [Documentation Index](./INDEX.md) · [Next: 14 - Migration Guide →](./14-migration-guide.md)
 
 </div>

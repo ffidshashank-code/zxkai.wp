@@ -1461,6 +1461,6 @@ npm run migration:show
 
 <div align="center">
 
-[← 13 - Horizontal Scaling Guide](./13-horizontal-scaling.md) · [Documentation Index](./README.md) · [Next: 15 - Project Roadmap →](./15-project-roadmap.md)
+[← 13 - Horizontal Scaling Guide](./13-horizontal-scaling.md) · [Documentation Index](./INDEX.md) · [Next: 15 - Project Roadmap →](./15-project-roadmap.md)
 
 </div>

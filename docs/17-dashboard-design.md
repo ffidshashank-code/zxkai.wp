@@ -813,6 +813,6 @@ For TLS or public exposure of the default single-port setup, terminate at your o
 
 <div align="center">
 
-[← 16 - Risk Management](./16-risk-management.md) · [Documentation Index](./README.md) · [Next: 18 - SDK Design →](./18-sdk-design.md)
+[← 16 - Risk Management](./16-risk-management.md) · [Documentation Index](./INDEX.md) · [Next: 18 - SDK Design →](./18-sdk-design.md)
 
 </div>

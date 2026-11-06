@@ -59,7 +59,7 @@ function withCopy(fn) {
       'scripts/check-sdk-coverage.mjs',
       'scripts/check-contract-shapes.mjs',
       'openapi.json',
-      'sdk/README.md',
+      'sdk/GUIDE.md',
       'sdk/javascript/src',
       'sdk/python/openwa',
       'sdk/php/src',
@@ -87,7 +87,7 @@ function withCopy(fn) {
 }
 
 test('the key validation route is required of every SDK, the key management routes are not', () => {
-  // sdk/README.md lists `auth/api-keys` as unexposed and says key validation itself is exposed. The scope used to
+  // sdk/GUIDE.md lists `auth/api-keys` as unexposed and says key validation itself is exposed. The scope used to
   // cut every entry to its first segment, which made all of /api/auth unexposed, so an SDK without its auth()
   // method kept the gate green. The gate runs on a copy of the sources it reads, with the PHP auth() emptied.
   withCopy(({ edit, run }) => {

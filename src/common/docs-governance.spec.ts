@@ -290,7 +290,7 @@ describe('governance docs match the repository', () => {
   it('says the Java SDK timeout also bounds the response body', () => {
     const java = 'sdk/java/src/main/java/com/rmyndharis/openwa';
     expect(read(java, 'http/DefaultHttpTransport.java')).toMatch(/future\.get\(timeoutMs, TimeUnit\.MILLISECONDS\)/);
-    const readme = between(read('sdk/java/README.md'), '- **Default per-request timeout**', '\n- **');
+    const readme = between(read('sdk/java/GUIDE.md'), '- **Default per-request timeout**', '\n- **');
     expect(readme.replace(/\s+/g, ' ')).toMatch(/bounds the whole exchange, response body included/);
     expect(read(java, 'ClientConfig.java')).toMatch(
       /Per-request timeout \(default 30s\), covering the whole exchange, response body included, with the default transport/,

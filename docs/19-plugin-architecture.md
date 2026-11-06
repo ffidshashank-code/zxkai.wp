@@ -870,6 +870,6 @@ which limit what the process can do to the host but not what a plugin inside it 
 
 <div align="center">
 
-[← 18 - SDK Design](./18-sdk-design.md) · [Documentation Index](./README.md) · [Next: 20 - Community Guidelines →](./20-community-guidelines.md)
+[← 18 - SDK Design](./18-sdk-design.md) · [Documentation Index](./INDEX.md) · [Next: 20 - Community Guidelines →](./20-community-guidelines.md)
 
 </div>

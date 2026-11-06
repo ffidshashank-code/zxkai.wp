@@ -90,7 +90,7 @@ Deliberately not exposed, matching `docs/18-sdk-design.md`: `auth`/api-keys,
 `audit`, `settings`, `stats`, `automation`, `infra`, `plugins`, the
 `integration` management routes, `metrics`, `mcp`, `ingress` and `docker`.
 Everything else the gateway publishes is exposed; see
-[the SDK overview](../README.md#coverage).
+[the SDK overview](../GUIDE.md#coverage).
 
 `UpdateWebhookRequest` omits null fields, so `filters(null)` leaves a
 webhook's filters unchanged. To remove every filter, pass

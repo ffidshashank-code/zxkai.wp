@@ -1136,6 +1136,6 @@ services:
 
 <div align="center">
 
-[← 07 - API Collection](./07-api-collection.md) · [Documentation Index](./README.md) · [Next: 09 - Testing Strategy →](./09-testing-strategy.md)
+[← 07 - API Collection](./07-api-collection.md) · [Documentation Index](./INDEX.md) · [Next: 09 - Testing Strategy →](./09-testing-strategy.md)
 
 </div>

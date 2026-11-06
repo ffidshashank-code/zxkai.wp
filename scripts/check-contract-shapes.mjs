@@ -56,7 +56,7 @@
  *
  * A mapping only gates the types somebody remembered to list, so a new DTO used to ship ungated by
  * default. The coverage check closes that: every schema an exposed operation sends or returns
- * (request bodies and 2xx responses, nested schemas included, the resources sdk/README.md declares
+ * (request bodies and 2xx responses, nested schemas included, the resources sdk/GUIDE.md declares
  * unexposed left out) must be compared by at least one of the JavaScript, Python, Go and Java
  * clients, or be recorded in UNMAPPED_SCHEMAS with a reason. The dashboard does not count towards it.
  * An operation that declares its body inline has no schema name for a client to map, so it is
@@ -1517,7 +1517,7 @@ export function parseJavaTypes(sources) {
 // ── schema coverage: nothing an exposed operation sends or returns goes unmapped by default ──
 
 /**
- * The resources sdk/README.md declares deliberately unexposed, read from the README rather than
+ * The resources sdk/GUIDE.md declares deliberately unexposed, read from the README rather than
  * restated here: a hand-copied second list is what drifts. Entries are kept as written, because
  * `audit` is a whole resource while `auth/api-keys` is one path under /api/auth, next to the
  * exposed `auth/validate`. A parenthetical is commentary on the entry before it, and its own
@@ -1528,13 +1528,13 @@ export function unexposedResources(readme) {
   const end = readme.indexOf('Everything else the gateway publishes', start);
   if (start < 0 || end < 0) {
     throw new Error(
-      'sdk/README.md: could not find the "Deliberately not exposed" paragraph, so the gates that derive their scope from it cannot run.',
+      'sdk/GUIDE.md: could not find the "Deliberately not exposed" paragraph, so the gates that derive their scope from it cannot run.',
     );
   }
   const paragraph = readme.slice(start, end).replace(/\([^)]*\)/g, '');
   const names = [...paragraph.matchAll(/`([^`]+)`/g)].map(m => m[1].trim());
   if (names.length < 8) {
-    throw new Error(`sdk/README.md: parsed only ${names.length} unexposed resources, expected the full list.`);
+    throw new Error(`sdk/GUIDE.md: parsed only ${names.length} unexposed resources, expected the full list.`);
   }
   return new Set(names);
 }
@@ -1765,7 +1765,7 @@ if (isDirectRun) {
     }
   }
 
-  const unexposed = unexposedResources(readFileSync(`${REPO_ROOT}sdk/README.md`, 'utf8'));
+  const unexposed = unexposedResources(readFileSync(`${REPO_ROOT}sdk/GUIDE.md`, 'utf8'));
   const exposed = exposedSchemas(openapi, unexposed);
   const comparedSchemas = new Set(
     CLIENTS.filter(c => c.sdk)

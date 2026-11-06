@@ -35,7 +35,7 @@ const version = pkg.version;
 const errors = [];
 
 // 1) README badges must be dynamic, not a pinned `badge/version-x`.
-for (const f of ['README.md', 'docs/README.md']) {
+for (const f of ['README.md', 'docs/INDEX.md']) {
   if (/shields\.io\/badge\/version-\d/.test(read(f))) {
     errors.push(`${f}: hardcoded version badge — use the dynamic shields "github/package-json/v" badge so it tracks package.json.`);
   }
@@ -58,7 +58,7 @@ const stack = [
   ['NestJS', majorOf(pkg.dependencies?.['@nestjs/core']), /NestJS[ -](\d+)\.x/g],
   ['TypeScript', majorOf(pkg.devDependencies?.typescript), /TypeScript[ -](\d+)\.x/g],
 ];
-for (const f of ['README.md', 'docs/README.md']) {
+for (const f of ['README.md', 'docs/INDEX.md']) {
   const text = read(f);
   for (const [name, want, pattern] of stack) {
     if (!want) continue;

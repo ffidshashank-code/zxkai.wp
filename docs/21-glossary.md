@@ -356,6 +356,6 @@ Default engine library used by OpenWA to interact with WhatsApp Web. Uses Puppet
 
 <div align="center">
 
-[← 20 - Community Guidelines](./20-community-guidelines.md) · [Documentation Index](./README.md)
+[← 20 - Community Guidelines](./20-community-guidelines.md) · [Documentation Index](./INDEX.md)
 
 </div>

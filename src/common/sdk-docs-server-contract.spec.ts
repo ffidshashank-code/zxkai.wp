@@ -18,11 +18,11 @@ describe('SDK compatibility note', () => {
   const PREVIEW_IMAGE_FIELDS = ['thumbnailUrl', 'thumbnailBase64'];
 
   it.each([
-    'sdk/README.md',
-    'sdk/javascript/README.md',
-    'sdk/python/README.md',
-    'sdk/go/README.md',
-    'sdk/java/README.md',
+    'sdk/GUIDE.md',
+    'sdk/javascript/GUIDE.md',
+    'sdk/python/GUIDE.md',
+    'sdk/go/GUIDE.md',
+    'sdk/java/GUIDE.md',
     'docs/18-sdk-design.md',
   ])('%s names the customLinkPreview image fields among the additions that need a newer gateway', path => {
     const paragraph = requirementsParagraph(path).toLowerCase();

@@ -252,7 +252,7 @@ the compose warning above) with a PVC for `/app/data`, the compose hardening mir
 (read-only rootfs, dropped capabilities, writable `emptyDir` at `/tmp`), and optional
 Ingress / PodDisruptionBudget / ServiceMonitor. Configuration goes through free-form
 `env` and `secretEnv` maps — any variable from `.env.example` works; see
-`charts/openwa/README.md` and the inline comments in `charts/openwa/values.yaml`.
+`charts/openwa/GUIDE.md` and the inline comments in `charts/openwa/values.yaml`.
 The k8s manifests in [13 - Horizontal Scaling Guide](./13-horizontal-scaling.md) are
 an illustrative design sketch; the chart is the authoritative artifact.
 
@@ -1300,6 +1300,6 @@ in [13 - Horizontal Scaling Guide](./13-horizontal-scaling.md).
 
 <div align="center">
 
-[← 09 - Testing Strategy](./09-testing-strategy.md) · [Documentation Index](./README.md) · [Next: 11 - Operational Runbooks →](./11-operational-runbooks.md)
+[← 09 - Testing Strategy](./09-testing-strategy.md) · [Documentation Index](./INDEX.md) · [Next: 11 - Operational Runbooks →](./11-operational-runbooks.md)
 
 </div>

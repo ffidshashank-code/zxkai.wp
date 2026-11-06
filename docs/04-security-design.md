@@ -1066,6 +1066,6 @@ Key takeaways for preventing future incidents.
 
 <div align="center">
 
-[← 03 - System Architecture](./03-system-architecture.md) · [Documentation Index](./README.md) · [Next: 05 - Database Design →](./05-database-design.md)
+[← 03 - System Architecture](./03-system-architecture.md) · [Documentation Index](./INDEX.md) · [Next: 05 - Database Design →](./05-database-design.md)
 
 </div>

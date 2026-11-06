@@ -296,6 +296,6 @@ flowchart TB
 
 <div align="center">
 
-[Documentation Index](./README.md) · [Next: 02 - Requirements Specification →](./02-requirements-specification.md)
+[Documentation Index](./INDEX.md) · [Next: 02 - Requirements Specification →](./02-requirements-specification.md)
 
 </div>

@@ -492,6 +492,6 @@ stateDiagram-v2
 
 <div align="center">
 
-[← 01 - Project Overview](./01-project-overview.md) · [Documentation Index](./README.md) · [Next: 03 - System Architecture →](./03-system-architecture.md)
+[← 01 - Project Overview](./01-project-overview.md) · [Documentation Index](./INDEX.md) · [Next: 03 - System Architecture →](./03-system-architecture.md)
 
 </div>

@@ -373,6 +373,6 @@ workflows brittle.
 
 <div align="center">
 
-[← 08 - Development Guidelines](./08-development-guidelines.md) · [Documentation Index](./README.md) · [Next: 10 - DevOps & Infrastructure →](./10-devops-infrastructure.md)
+[← 08 - Development Guidelines](./08-development-guidelines.md) · [Documentation Index](./INDEX.md) · [Next: 10 - DevOps & Infrastructure →](./10-devops-infrastructure.md)
 
 </div>

@@ -1649,6 +1649,6 @@ means more vertical headroom and external backends, not multi-replica clustering
 
 <div align="center">
 
-[← 02 - Requirements Specification](./02-requirements-specification.md) · [Documentation Index](./README.md) · [Next: 04 - Security Design →](./04-security-design.md)
+[← 02 - Requirements Specification](./02-requirements-specification.md) · [Documentation Index](./INDEX.md) · [Next: 04 - Security Design →](./04-security-design.md)
 
 </div>

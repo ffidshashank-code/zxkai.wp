@@ -8,7 +8,7 @@
  * that announced them.
  *
  * So this asks the other question: does every route the contract publishes, minus the resources
- * `sdk/README.md` declares unexposed, have a method in EVERY SDK?
+ * `sdk/GUIDE.md` declares unexposed, have a method in EVERY SDK?
  *
  * PER SDK, deliberately. A total across the five would pass while two clients were missing a route
  * three others had — which is the shape of the gap this exists to prevent. Every failure names the
@@ -20,7 +20,7 @@
  *     not that its body or response match. A call the scan cannot pair with its path (the messages
  *     send-<type> helpers, binary downloads, Go's service helpers and `path :=` variables) is not
  *     verb-checked, so a wrong verb on a single-verb route built that way passes.
- *   - The exclusion list is PARSED from sdk/README.md, so the gate and the promise cannot drift.
+ *   - The exclusion list is PARSED from sdk/GUIDE.md, so the gate and the promise cannot drift.
  *
  * The harvester is deliberately GENEROUS: it over-approximates what each client builds. That is the
  * safe direction here. A gate that fails on a route the SDK does have is noise, and a noisy gate
@@ -198,7 +198,7 @@ const covers = (built, path) => built.exact.has(path);
 
 // Read the way the shape gate reads it (entries as written, a parenthetical ignored, `auth/api-keys` a path
 // prefix): cutting every entry to its first segment made all of /api/auth unexposed, key validation included.
-const excluded = unexposedResources(readFileSync(join(root, 'sdk/README.md'), 'utf8'));
+const excluded = unexposedResources(readFileSync(join(root, 'sdk/GUIDE.md'), 'utf8'));
 const contract = [...new Set(Object.keys(JSON.parse(readFileSync(join(root, 'openapi.json'), 'utf8')).paths).map(normalize))];
 /** Every shape the contract publishes, including the excluded resources — a wildcard is explained by
  *  a by-id route whether or not the SDKs are asked to expose it. */
@@ -403,7 +403,7 @@ if (process.argv[1] && realpathSync(process.argv[1]) === fileURLToPath(import.me
   if (errors.length) {
     console.error('\n✖ The contract publishes routes the SDKs do not expose:');
     for (const e of errors) console.error(`  - ${e}`);
-    console.error('\nsdk/README.md promises that everything outside its excluded set is exposed.');
+    console.error('\nsdk/GUIDE.md promises that everything outside its excluded set is exposed.');
     console.error('Add the client method, or add the resource to that list with a reason.\n');
     process.exit(1);
   }

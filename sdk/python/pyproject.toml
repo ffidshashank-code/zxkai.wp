@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "rmyndharis-openwa"
 version = "0.9.0"
 description = "Official Python SDK for OpenWA, the open-source WhatsApp API Gateway (not affiliated with WhatsApp or Meta)"
-readme = "README.md"
+readme = "GUIDE.md"
 license = "MIT"
 license-files = ["LICENSE"]
 requires-python = ">=3.9"

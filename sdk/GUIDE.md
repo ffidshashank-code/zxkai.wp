@@ -204,7 +204,7 @@ System.out.println(result.messageId());
 Requires Java 17+. Errors are a typed, unchecked hierarchy — branch with
 `instanceof OpenWANotFoundError` / `OpenWAConflictError`. For testing, inject a
 custom `HttpTransport` that records the request — no network. See
-[`java/README.md`](java/README.md) for the full guide.
+[`java/GUIDE.md`](java/GUIDE.md) for the full guide.
 
 ## Go
 
@@ -249,7 +249,7 @@ fmt.Println(res.MessageID)
 Requires Go 1.22+. Stdlib-only, context-first. Errors are typed — match with
 `errors.Is(err, openwa.ErrConflict)` or unwrap `*openwa.APIError` with
 `errors.As`. Inject an `http.RoundTripper` with `openwa.WithTransport(...)` for
-testing, retry, tracing, or metrics. See [`go/README.md`](go/README.md).
+testing, retry, tracing, or metrics. See [`go/GUIDE.md`](go/GUIDE.md).
 
 ## Reliability & security
 

@@ -1298,6 +1298,6 @@ External Contacts:
 
 <div align="center">
 
-[← 10 - DevOps & Infrastructure](./10-devops-infrastructure.md) · [Documentation Index](./README.md) · [Next: 12 - Troubleshooting & FAQ →](./12-troubleshooting-faq.md)
+[← 10 - DevOps & Infrastructure](./10-devops-infrastructure.md) · [Documentation Index](./INDEX.md) · [Next: 12 - Troubleshooting & FAQ →](./12-troubleshooting-faq.md)
 
 </div>

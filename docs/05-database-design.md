@@ -1060,6 +1060,6 @@ Build any scheduled or off-site pipeline around the archive `scripts/backup.sh` 
 
 <div align="center">
 
-[← 04 - Security Design](./04-security-design.md) · [Documentation Index](./README.md) · [Next: 06 - API Specification →](./06-api-specification.md)
+[← 04 - Security Design](./04-security-design.md) · [Documentation Index](./INDEX.md) · [Next: 06 - API Specification →](./06-api-specification.md)
 
 </div>

@@ -445,6 +445,6 @@ No fixed response SLA is promised, but in practice:
 
 <div align="center">
 
-[← 19 - Plugin Architecture](./19-plugin-architecture.md) · [Documentation Index](./README.md) · [Next: 21 - Glossary →](./21-glossary.md)
+[← 19 - Plugin Architecture](./19-plugin-architecture.md) · [Documentation Index](./INDEX.md) · [Next: 21 - Glossary →](./21-glossary.md)
 
 </div>
