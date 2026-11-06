@@ -11,7 +11,7 @@ import {
 } from '../services/api';
 import { useDocumentTitle } from '../hooks/useDocumentTitle';
 import { useRole } from '../hooks/useRole';
-import { useSessionsQuery, useSessionGroupsQuery } from '../hooks/queries';
+import { useSessionsQuery, useSessionGroupsQuery, useTemplatesQuery } from '../hooks/queries';
 import { parseBulkRecipients, BULK_MAX_RECIPIENTS, BULK_RECIPIENTS_FILE_MAX_BYTES } from '../utils/bulkRecipients';
 import {
   BULK_CAPTION_MAX_LENGTH,
@@ -33,6 +33,13 @@ import { groupLabel, isGatewayRefusal, planGroupSend } from '../utils/groupSelec
 import { normalizePhoneText } from '../utils/phone';
 import { sendSequentially } from '../utils/sendSequentially';
 import { keepsSameKey } from '../utils/authLifecycle';
+import {
+  BROADCAST_FILE_MAX_BYTES,
+  broadcastTemplateVariables,
+  parseBroadcastFile,
+  renderBroadcastTemplate,
+  type BroadcastImport,
+} from '../utils/broadcastRecipients';
 import './MessageTester.css';
 import { MEDIA_UPLOAD_MAX_BYTES } from '../utils/mediaUpload';
 
@@ -136,21 +143,36 @@ const phoneDigits = (text: string): string | null => {
 };
 
 export function MessageTester() {
+  return <MessageTesterPage />;
+}
+
+export function BroadcastComposer() {
+  return <MessageTesterPage broadcastOnly />;
+}
+
+function MessageTesterPage({ broadcastOnly = false }: { broadcastOnly?: boolean } = {}) {
   const { t } = useTranslation();
-  useDocumentTitle(t('messageTester.title'));
+  useDocumentTitle(t(broadcastOnly ? 'messageTester.broadcastTitle' : 'messageTester.title'));
   const { canWrite } = useRole();
   const { data: allSessions = [], isLoading: loadingSessions, error: sessionsError } = useSessionsQuery();
   // A read that never produced a list is not "no ready sessions"; a failed refetch keeps the cached one.
   const sessionsFailed = !!sessionsError && allSessions.length === 0;
   const sessions = allSessions.filter(s => s.status === 'ready');
   const [session, setSession] = useState('');
+  const {
+    data: broadcastTemplates = [],
+    isLoading: loadingBroadcastTemplates,
+    error: broadcastTemplatesError,
+  } = useTemplatesQuery(session, broadcastOnly && canWrite && !!session);
   const [recipient, setRecipient] = useState('');
   const [recipientType, setRecipientType] = useState<'personal' | 'group'>('personal');
   const [selectedGroups, setSelectedGroups] = useState<string[]>([]);
   const [groupSendProgress, setGroupSendProgress] = useState<{ current: number; total: number } | null>(null);
   const [groupSendCancelling, setGroupSendCancelling] = useState(false);
   const groupSendAbort = useRef<AbortController | null>(null);
-  const [messageType, setMessageType] = useState<(typeof messageTypes)[number]>('text');
+  const [messageType, setMessageType] = useState<(typeof messageTypes)[number]>(() =>
+    broadcastOnly ? 'bulk' : 'text',
+  );
   const [content, setContent] = useState('');
   const [mediaUrl, setMediaUrl] = useState('');
   // A locally-picked media file, read as raw base64 (the engine contract — NOT a data: URI). Mutually
@@ -158,10 +180,12 @@ export function MessageTester() {
   const [mediaFile, setMediaFile] = useState<{ base64: string; mimetype: string; filename: string } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const bulkFileInputRef = useRef<HTMLInputElement>(null);
+  const broadcastFileInputRef = useRef<HTMLInputElement>(null);
   // Monotonic token invalidating an in-flight FileReader: a second pick, a URL edit, a removal,
   // or an unmount before `onload` fires must win over the late-arriving bytes — otherwise the
   // slower read overwrites the newer state (and re-clears a URL the user just typed).
   const mediaReadSeq = useRef(0);
+  const broadcastReadSeq = useRef(0);
   const clearMediaFile = () => {
     mediaReadSeq.current += 1;
     setMediaFile(null);
@@ -169,6 +193,7 @@ export function MessageTester() {
   useEffect(() => {
     return () => {
       mediaReadSeq.current += 1;
+      broadcastReadSeq.current += 1;
     };
   }, []);
   // Per-type fields for the non-media types; text/media keep using `content`/`mediaUrl` above.
@@ -186,6 +211,11 @@ export function MessageTester() {
   const [forwardTo, setForwardTo] = useState('');
   const [forwardMessageId, setForwardMessageId] = useState('');
   const [bulkRecipients, setBulkRecipients] = useState('');
+  const [broadcastMode, setBroadcastMode] = useState(broadcastOnly);
+  const [broadcastImport, setBroadcastImport] = useState<BroadcastImport | null>(null);
+  const [broadcastFileName, setBroadcastFileName] = useState('');
+  const [broadcastImportError, setBroadcastImportError] = useState('');
+  const [selectedBroadcastTemplateId, setSelectedBroadcastTemplateId] = useState('');
   const [bulkDelay, setBulkDelay] = useState('');
   const [bulkMediaKind, setBulkMediaKind] = useState<BulkMediaKind>('document');
   const [bulkMediaKindChosen, setBulkMediaKindChosen] = useState(false);
@@ -292,6 +322,29 @@ export function MessageTester() {
     reader.readAsText(file);
   };
 
+  const handleBroadcastFileChange = async (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    const readSequence = ++broadcastReadSeq.current;
+    setBroadcastImport(null);
+    setBroadcastFileName('');
+    setBroadcastImportError('');
+    if (file.size > BROADCAST_FILE_MAX_BYTES) {
+      setBroadcastImportError(t('messageTester.broadcastFileTooLarge'));
+      return;
+    }
+    try {
+      const imported = await parseBroadcastFile(file);
+      if (broadcastReadSeq.current !== readSequence) return;
+      setBroadcastImport(imported);
+      setBroadcastFileName(file.name);
+    } catch (err) {
+      if (broadcastReadSeq.current !== readSequence) return;
+      setBroadcastImportError(err instanceof Error ? err.message : t('messageTester.fileReadError'));
+    }
+  };
+
   const handleCancelBatch = async () => {
     if (!batchStatus || !batchSessionRef.current) return;
     setBatchCancelling(true);
@@ -350,21 +403,71 @@ export function MessageTester() {
   const lat = parseFloat(latitude);
   const lng = parseFloat(longitude);
   const delayMs = bulkDelay.trim() === '' ? undefined : parseInt(bulkDelay, 10);
-  const bulkAttachment = messageType === 'bulk' ? toBulkAttachment(bulkMediaKind, mediaFile, mediaUrl) : null;
+  const bulkAttachment =
+    messageType === 'bulk' && !broadcastMode ? toBulkAttachment(bulkMediaKind, mediaFile, mediaUrl) : null;
+  const selectedBroadcastTemplate = broadcastTemplates.find(template => template.id === selectedBroadcastTemplateId);
+  const broadcastTemplateSource =
+    broadcastOnly && selectedBroadcastTemplate
+      ? [selectedBroadcastTemplate.header, selectedBroadcastTemplate.body, selectedBroadcastTemplate.footer]
+          .filter((part): part is string => !!part?.trim())
+          .join('\n\n')
+      : content;
+  const broadcastVariableNames = useMemo(
+    () => broadcastTemplateVariables(broadcastTemplateSource),
+    [broadcastTemplateSource],
+  );
+  const broadcastMessages = useMemo(
+    () =>
+      broadcastImport?.recipients.map(({ chatId, fields }) => {
+        const variables = Object.fromEntries(
+          broadcastVariableNames.filter(name => Object.hasOwn(fields, name)).map(name => [name, fields[name]]),
+        );
+        return {
+          chatId,
+          type: 'text' as const,
+          content: { text: broadcastTemplateSource },
+          ...(Object.keys(variables).length > 0 ? { variables } : {}),
+        };
+      }) ?? [],
+    [broadcastImport, broadcastTemplateSource, broadcastVariableNames],
+  );
+  const broadcastHasUnknownPlaceholder =
+    !!broadcastImport &&
+    broadcastImport.recipients.some(({ fields }) => broadcastVariableNames.some(name => !Object.hasOwn(fields, name)));
+  const broadcastMessageTooLong = broadcastMessages.some(
+    message =>
+      captionLength(
+        renderBroadcastTemplate(
+          message.content.text,
+          broadcastImport?.recipients.find(recipient => recipient.chatId === message.chatId)?.fields ?? {},
+        ),
+      ) > MESSAGE_TEXT_MAX_LENGTH,
+  );
+  const broadcastPreview = broadcastImport?.recipients[0]
+    ? renderBroadcastTemplate(broadcastTemplateSource, broadcastImport.recipients[0].fields)
+    : '';
   const bulkMediaTooLarge =
     messageType === 'bulk' &&
+    !broadcastMode &&
     !!mediaFile &&
     mediaFile.base64.length * bulkRecipientList.length > BULK_INLINE_MEDIA_MAX_BYTES;
   // The gateway reads a media string as a URL only with an http(s) prefix and decodes anything else as
   // base64, so a URL without one is refused (or sent as garbage bytes) for every recipient alike.
-  const mediaUrlInvalid = !mediaFile && mediaUrl.trim() !== '' && !isHttpMediaUrl(mediaUrl);
+  const mediaUrlInvalid = !broadcastMode && !mediaFile && mediaUrl.trim() !== '' && !isHttpMediaUrl(mediaUrl);
   // Audio goes out without a caption (the bulk service does not forward one), so text next to an audio
   // attachment would be dropped while the batch reports success. Refuse it instead of sending half.
-  const bulkAudioWithText = bulkAttachment?.kind === 'audio' && content.trim().length > 0;
+  const bulkAudioWithText = !broadcastMode && bulkAttachment?.kind === 'audio' && content.trim().length > 0;
   const bulkCaptionTooLong =
-    bulkAttachment !== null && bulkAttachment.kind !== 'audio' && captionLength(content) > BULK_CAPTION_MAX_LENGTH;
+    !broadcastMode &&
+    bulkAttachment !== null &&
+    bulkAttachment.kind !== 'audio' &&
+    captionLength(content) > BULK_CAPTION_MAX_LENGTH;
   // Without an attachment every item is a text message, under the same bound as a single text send.
-  const bulkTextTooLong = bulkAttachment === null && captionLength(content) > MESSAGE_TEXT_MAX_LENGTH;
+  const bulkTextTooLong =
+    messageType === 'bulk' &&
+    !broadcastMode &&
+    bulkAttachment === null &&
+    captionLength(content) > MESSAGE_TEXT_MAX_LENGTH;
 
   // The text field goes out as the caption on image and video and as the filename on a document.
   const mediaContentMax =
@@ -407,14 +510,19 @@ export function MessageTester() {
     formValid = namesRecipient(forwardTo) && forwardMessageId.trim().length > 0;
   } else if (messageType === 'bulk') {
     formValid =
-      (content.trim().length > 0 || bulkAttachment !== null) &&
+      (broadcastMode
+        ? broadcastTemplateSource.trim().length > 0 &&
+          broadcastMessages.length > 0 &&
+          !broadcastHasUnknownPlaceholder &&
+          !broadcastMessageTooLong
+        : (content.trim().length > 0 || bulkAttachment !== null) &&
+          bulkRecipientList.length > 0 &&
+          bulkRecipientList.length <= BULK_MAX_RECIPIENTS) &&
       !bulkMediaTooLarge &&
       !mediaUrlInvalid &&
       !bulkAudioWithText &&
       !bulkCaptionTooLong &&
       !bulkTextTooLong &&
-      bulkRecipientList.length > 0 &&
-      bulkRecipientList.length <= BULK_MAX_RECIPIENTS &&
       (delayMs === undefined || (!Number.isNaN(delayMs) && delayMs >= 1000 && delayMs <= 60000));
   }
 
@@ -551,7 +659,7 @@ export function MessageTester() {
       // Bulk is a batch, not a single send: 202 + batchId, then poll progress until terminal.
       if (messageType === 'bulk') {
         const batch = await messageApi.sendBulk(session, {
-          messages: buildBulkMessages(bulkRecipientList, content, bulkAttachment),
+          messages: broadcastMode ? broadcastMessages : buildBulkMessages(bulkRecipientList, content, bulkAttachment),
           ...(delayMs !== undefined ? { options: { delayBetweenMessages: delayMs } } : {}),
         });
         assertCurrent();
@@ -755,7 +863,10 @@ export function MessageTester() {
 
   return (
     <div className="message-tester">
-      <PageHeader title={t('messageTester.title')} subtitle={t('messageTester.subtitle')} />
+      <PageHeader
+        title={t(broadcastOnly ? 'messageTester.broadcastTitle' : 'messageTester.title')}
+        subtitle={t(broadcastOnly ? 'messageTester.broadcastSubtitle' : 'messageTester.subtitle')}
+      />
 
       {sessionsFailed && (
         <div className="error-banner" role="alert">
@@ -857,35 +968,38 @@ export function MessageTester() {
           {/* A multi-group run sends what was on screen when it started, so the fields are locked until it
               ends or is cancelled; Cancel sits outside, so it stays usable. */}
           <fieldset className="composer-fields" disabled={isGroupSending}>
-            <div className="form-group">
-              <span className="group-label" id="message-type-label">
-                {t('messageTester.messageType')}
-              </span>
-              <div className="toggle-group toggle-group-wrap" role="group" aria-labelledby="message-type-label">
-                {messageTypes.map(type => (
-                  <button
-                    key={type}
-                    type="button"
-                    aria-pressed={messageType === type}
-                    className={messageType === type ? 'active' : ''}
-                    onClick={() => {
-                      // A picked file's mimetype is bound to the category active at pick time, so dropping the
-                      // category would route stale bytes to the wrong send-${type} endpoint — clear it.
-                      if (type !== messageType) {
-                        clearMediaFile();
-                        if (type === 'bulk' || messageType === 'bulk') {
-                          setMediaUrl('');
-                          setBulkMediaKindChosen(false);
+            {!broadcastOnly && (
+              <div className="form-group">
+                <span className="group-label" id="message-type-label">
+                  {t('messageTester.messageType')}
+                </span>
+                <div className="toggle-group toggle-group-wrap" role="group" aria-labelledby="message-type-label">
+                  {messageTypes.map(type => (
+                    <button
+                      key={type}
+                      type="button"
+                      aria-pressed={messageType === type}
+                      className={messageType === type ? 'active' : ''}
+                      onClick={() => {
+                        // A picked file's mimetype is bound to the category active at pick time, so dropping the
+                        // category would route stale bytes to the wrong send-${type} endpoint — clear it.
+                        if (type !== messageType) {
+                          clearMediaFile();
+                          if (type === 'bulk' || messageType === 'bulk') {
+                            setMediaUrl('');
+                            setBulkMediaKindChosen(false);
+                          }
                         }
-                      }
-                      setMessageType(type);
-                    }}
-                  >
-                    {t(`messageTester.types.${type}`)}
-                  </button>
-                ))}
+                        if (type !== 'bulk') setBroadcastMode(false);
+                        setMessageType(type);
+                      }}
+                    >
+                      {t(`messageTester.types.${type}`)}
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
 
             {messageType === 'text' && (
               <div className="form-group">
@@ -1117,65 +1231,181 @@ export function MessageTester() {
 
             {messageType === 'bulk' && (
               <>
-                <div className="form-group">
-                  <div
-                    style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      marginBottom: '0.5rem',
-                    }}
-                  >
-                    <label htmlFor="mt-11" style={{ marginBottom: 0 }}>
-                      {t('messageTester.bulkRecipients')}
+                {!broadcastOnly && (
+                  <div className="form-group broadcast-mode-toggle">
+                    <label className="checkbox-label">
+                      <input
+                        type="checkbox"
+                        checked={broadcastMode}
+                        onChange={event => {
+                          setBroadcastMode(event.target.checked);
+                          setBroadcastImportError('');
+                        }}
+                      />
+                      {t('messageTester.broadcastMode')}
                     </label>
-                    <button type="button" className="browse-btn" onClick={() => bulkFileInputRef.current?.click()}>
-                      <Upload size={14} /> {t('messageTester.bulkRecipientsUpload')}
-                    </button>
-                    <input
-                      ref={bulkFileInputRef}
-                      type="file"
-                      accept=".txt,.csv"
-                      style={{ display: 'none' }}
-                      onChange={handleBulkFileChange}
-                    />
                   </div>
-                  <textarea
-                    id="mt-11"
-                    dir="ltr"
-                    value={bulkRecipients}
-                    onChange={e => setBulkRecipients(e.target.value)}
-                    placeholder={t('messageTester.bulkRecipientsPlaceholder')}
-                    rows={4}
-                  />
-                  <span className="hint">
-                    {t('messageTester.bulkRecipientsHint')} ·{' '}
-                    {t('messageTester.bulkRecipientsCount', { count: bulkRecipientList.length })}
-                  </span>
-                </div>
+                )}
+
+                {broadcastMode ? (
+                  <>
+                    {broadcastOnly && (
+                      <div className="form-group">
+                        <label htmlFor="broadcast-template">{t('messageTester.broadcastSavedTemplate')}</label>
+                        <select
+                          id="broadcast-template"
+                          value={selectedBroadcastTemplate ? selectedBroadcastTemplate.id : ''}
+                          onChange={event => setSelectedBroadcastTemplateId(event.target.value)}
+                          disabled={loadingBroadcastTemplates}
+                        >
+                          <option value="">
+                            {loadingBroadcastTemplates
+                              ? t('messageTester.broadcastTemplatesLoading')
+                              : t('messageTester.broadcastCustomMessage')}
+                          </option>
+                          {broadcastTemplates.map(template => (
+                            <option key={template.id} value={template.id}>
+                              {template.name}
+                            </option>
+                          ))}
+                        </select>
+                        {broadcastTemplatesError && (
+                          <span className="hint error" role="alert">
+                            {broadcastTemplatesError.message}
+                          </span>
+                        )}
+                        <a className="hint broadcast-template-link" href="/templates">
+                          {t('messageTester.broadcastManageTemplates')}
+                        </a>
+                      </div>
+                    )}
+                    <div className="form-group">
+                      <label>{t('messageTester.broadcastUpload')}</label>
+                      <input
+                        ref={broadcastFileInputRef}
+                        type="file"
+                        dir="ltr"
+                        accept=".xlsx,.xls,.csv,.json"
+                        onChange={handleBroadcastFileChange}
+                      />
+                      <span className="hint">{t('messageTester.broadcastConsentNote')}</span>
+                      {broadcastImport && (
+                        <span className="hint" role="status">
+                          {t('messageTester.broadcastRows', {
+                            eligible: broadcastImport.recipients.length,
+                            excluded: broadcastImport.excluded,
+                          })}
+                          {broadcastFileName ? ` · ${broadcastFileName}` : ''}
+                        </span>
+                      )}
+                      {broadcastImportError && (
+                        <span className="hint error" role="alert">
+                          {broadcastImportError}
+                        </span>
+                      )}
+                    </div>
+                  </>
+                ) : (
+                  <div className="form-group">
+                    <div
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        marginBottom: '0.5rem',
+                      }}
+                    >
+                      <label htmlFor="mt-11" style={{ marginBottom: 0 }}>
+                        {t('messageTester.bulkRecipients')}
+                      </label>
+                      <button type="button" className="browse-btn" onClick={() => bulkFileInputRef.current?.click()}>
+                        <Upload size={14} /> {t('messageTester.bulkRecipientsUpload')}
+                      </button>
+                      <input
+                        ref={bulkFileInputRef}
+                        type="file"
+                        accept=".txt,.csv"
+                        style={{ display: 'none' }}
+                        onChange={handleBulkFileChange}
+                      />
+                    </div>
+                    <textarea
+                      id="mt-11"
+                      dir="ltr"
+                      value={bulkRecipients}
+                      onChange={e => setBulkRecipients(e.target.value)}
+                      placeholder={t('messageTester.bulkRecipientsPlaceholder')}
+                      rows={4}
+                    />
+                    <span className="hint">
+                      {t('messageTester.bulkRecipientsHint')} ·{' '}
+                      {t('messageTester.bulkRecipientsCount', { count: bulkRecipientList.length })}
+                    </span>
+                  </div>
+                )}
                 <div className="form-group">
-                  <label htmlFor="mt-12">{t('messageTester.messageContent')}</label>
+                  <label htmlFor="mt-12">
+                    {broadcastOnly && selectedBroadcastTemplate
+                      ? t('messageTester.broadcastSelectedTemplate')
+                      : t('messageTester.messageContent')}
+                  </label>
                   <textarea
                     id="mt-12"
-                    value={content}
+                    value={broadcastOnly && selectedBroadcastTemplate ? broadcastTemplateSource : content}
                     onChange={e => setContent(e.target.value)}
-                    placeholder={t('messageTester.messagePlaceholder')}
+                    disabled={broadcastOnly && !!selectedBroadcastTemplate}
+                    placeholder={
+                      broadcastMode
+                        ? t('messageTester.broadcastTemplatePlaceholder')
+                        : t('messageTester.messagePlaceholder')
+                    }
                     rows={4}
                   />
+                  {broadcastMode && (
+                    <>
+                      <span className="hint">
+                        {broadcastOnly
+                          ? t('messageTester.broadcastSavedTemplateHint', { owner_name: '{{owner_name}}' })
+                          : t('messageTester.broadcastTemplateHint', {
+                              owner_name: '{{owner_name}}',
+                              reg_no: '{{reg_no}}',
+                            })}
+                      </span>
+                      {broadcastImport && broadcastImport.fields.length > 0 && (
+                        <span className="hint broadcast-template-fields">
+                          {t('messageTester.broadcastAvailableVariables')}{' '}
+                          {broadcastImport.fields.map(field => `{{${field}}}`).join(', ')}
+                        </span>
+                      )}
+                      <span className="hint error" role="status">
+                        {broadcastHasUnknownPlaceholder
+                          ? t('messageTester.broadcastUnknownPlaceholder')
+                          : broadcastMessageTooLong
+                            ? t('messageTester.broadcastRenderedTooLong')
+                            : ''}
+                      </span>
+                      {broadcastPreview && (
+                        <div className="broadcast-preview">
+                          <span className="group-label">{t('messageTester.broadcastPreview')}</span>
+                          <p>{broadcastPreview}</p>
+                        </div>
+                      )}
+                    </>
+                  )}
                   <span className="hint error" role="status">
-                    {bulkAudioWithText
+                    {!broadcastMode && bulkAudioWithText
                       ? t('messageTester.bulkAudioNoCaption')
-                      : bulkCaptionTooLong
+                      : !broadcastMode && bulkCaptionTooLong
                         ? t('messageTester.bulkCaptionTooLong', {
                             max: BULK_CAPTION_MAX_LENGTH,
                             count: captionLength(content),
                           })
-                        : bulkTextTooLong
+                        : !broadcastMode && bulkTextTooLong
                           ? t('common.fieldTooLong', { max: MESSAGE_TEXT_MAX_LENGTH, count: captionLength(content) })
                           : ''}
                   </span>
                 </div>
-                {mediaSourceFields}
+                {!broadcastMode && mediaSourceFields}
                 {bulkAttachment && (
                   <div className="form-group">
                     <span className="group-label" id="bulk-media-kind-label">

@@ -22,6 +22,7 @@ const Templates = lazy(() => import('./pages/Templates').then(m => ({ default: m
 const Logs = lazy(() => import('./pages/Logs').then(m => ({ default: m.Logs })));
 const ApiKeys = lazy(() => import('./pages/ApiKeys').then(m => ({ default: m.ApiKeys })));
 const MessageTester = lazy(() => import('./pages/MessageTester').then(m => ({ default: m.MessageTester })));
+const Broadcast = lazy(() => import('./pages/MessageTester').then(m => ({ default: m.BroadcastComposer })));
 const NumberChecker = lazy(() => import('./pages/NumberChecker').then(m => ({ default: m.NumberChecker })));
 const Infrastructure = lazy(() => import('./pages/Infrastructure').then(m => ({ default: m.Infrastructure })));
 const Plugins = lazy(() => import('./pages/Plugins'));
@@ -132,6 +133,7 @@ function AppContent() {
                 {role === 'admin' && !scoped && <Route path="api-keys" element={<ApiKeys />} />}
                 {role === 'admin' && <Route path="logs" element={<Logs />} />}
                 <Route path="message-tester" element={<MessageTester />} />
+                <Route path="broadcast" element={<Broadcast />} />
                 {role === 'admin' && !scoped && <Route path="infrastructure" element={<Infrastructure />} />}
                 {role === 'admin' && !scoped && <Route path="plugins" element={<Plugins />} />}
                 <Route path="*" element={<Navigate to="/" replace />} />

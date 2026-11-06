@@ -11,6 +11,7 @@ type RTL = typeof import('@testing-library/react');
 
 let rtl: RTL;
 let MessageTester: typeof import('./MessageTester.tsx').MessageTester;
+let BroadcastComposer: typeof import('./MessageTester.tsx').BroadcastComposer;
 let RoleProvider: typeof import('../components/RoleProvider.tsx').RoleProvider;
 let maxBytes: number;
 let inlineMediaBudgetBytes: (recipientCount: number) => number;
@@ -36,7 +37,7 @@ before(async () => {
   await i18nReady;
   rtl = await import('@testing-library/react');
   ({ RoleProvider } = await import('../components/RoleProvider.tsx'));
-  ({ MessageTester } = await import('./MessageTester.tsx'));
+  ({ MessageTester, BroadcastComposer } = await import('./MessageTester.tsx'));
   ({ BULK_RECIPIENTS_FILE_MAX_BYTES: maxBytes } = await import('../utils/bulkRecipients.ts'));
   ({ inlineMediaBudgetBytes } = await import('../utils/bulkMedia.ts'));
 });
@@ -51,20 +52,26 @@ afterEach(() => {
 interface BulkItem {
   chatId: string;
   type: string;
-  content: { caption?: string; image?: { base64?: string; mimetype?: string } };
+  variables?: Record<string, string>;
+  content: { text?: string; caption?: string; image?: { base64?: string; mimetype?: string } };
 }
 
 function jsonResponse(data: unknown, status = 200): Response {
   return new Response(JSON.stringify(data), { status, headers: { 'Content-Type': 'application/json' } });
 }
 
-function stubGateway(): { bulkBodies: { messages: BulkItem[] }[] } {
+function stubGateway(
+  templates: { id: string; name: string; body: string; header?: string | null; footer?: string | null }[] = [],
+): {
+  bulkBodies: { messages: BulkItem[] }[];
+} {
   const bulkBodies: { messages: BulkItem[] }[] = [];
   globalThis.fetch = ((input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
     const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
     if (url.endsWith('/sessions')) {
       return Promise.resolve(jsonResponse([{ id: 's1', name: 'Main', status: 'ready', phone: '15550000000' }]));
     }
+    if (url.endsWith('/sessions/s1/templates')) return Promise.resolve(jsonResponse(templates));
     if (url.endsWith('/messages/send-bulk')) {
       const body = JSON.parse(String(init?.body)) as { messages: BulkItem[] };
       bulkBodies.push(body);
@@ -87,13 +94,21 @@ function stubGateway(): { bulkBodies: { messages: BulkItem[] }[] } {
   return { bulkBodies };
 }
 
-async function renderBulkAsWriter(): Promise<HTMLElement> {
+async function renderBulkAsWriter(broadcastOnly = false): Promise<HTMLElement> {
   window.sessionStorage.setItem('openwa_user_role', 'admin');
   const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 1_000 } } });
   const { container } = rtl.render(
-    createElement(QueryClientProvider, { client }, createElement(RoleProvider, null, createElement(MessageTester))),
+    createElement(
+      QueryClientProvider,
+      { client },
+      createElement(
+        RoleProvider,
+        null,
+        broadcastOnly ? createElement(BroadcastComposer) : createElement(MessageTester),
+      ),
+    ),
   );
-  rtl.fireEvent.click(await rtl.screen.findByRole('button', { name: 'Bulk' }));
+  if (!broadcastOnly) rtl.fireEvent.click(await rtl.screen.findByRole('button', { name: 'Bulk' }));
   await rtl.screen.findByRole('option', { name: /Main/ });
   return container;
 }
@@ -115,6 +130,71 @@ function pickMedia(container: HTMLElement, file: File): void {
 function sendButton(): HTMLButtonElement {
   return rtl.screen.getByRole('button', { name: 'Send Message' }) as HTMLButtonElement;
 }
+
+test('broadcast-only mode opens directly to the spreadsheet composer', async () => {
+  stubGateway();
+  const container = await renderBulkAsWriter(true);
+
+  rtl.screen.getByRole('heading', { name: 'Broadcast' });
+  assert.ok(container.querySelector('input[type="file"][accept=".xlsx,.xls,.csv,.json"]'));
+  assert.equal(container.querySelector('#mt-11'), null, 'the generic recipient list was shown');
+  assert.equal(
+    container.querySelector('[aria-labelledby="message-type-label"]'),
+    null,
+    'message type chooser was shown',
+  );
+  assert.equal(
+    rtl.screen.queryByRole('checkbox', { name: 'Personalize messages from a consented spreadsheet' }),
+    null,
+    'the opt-in mode toggle was shown even though this is the dedicated page',
+  );
+});
+
+test('a saved template renders row values and sends only the variables it uses', async () => {
+  const gateway = stubGateway([
+    {
+      id: 'template-1',
+      name: 'Registration update',
+      header: 'Vehicle update',
+      body: 'Hello {{owner_name}}, registration {{reg_no}}.',
+      footer: null,
+    },
+  ]);
+  const container = await renderBulkAsWriter(true);
+  const templateSelect = container.querySelector('#broadcast-template') as HTMLSelectElement;
+  await rtl.screen.findByRole('option', { name: 'Registration update' });
+  rtl.fireEvent.change(templateSelect, { target: { value: 'template-1' } });
+
+  const input = container.querySelector('input[type="file"][accept=".xlsx,.xls,.csv,.json"]');
+  assert.ok(input, 'expected the structured broadcast file input');
+  const file = new window.File([], 'contacts.csv', { type: 'text/csv' });
+  const csv =
+    'STATE,REG NO,OWNER NAME,ADDRESS,MOBILE,CONSENT\nUttar Pradesh,UP32PZ2125,ASHOK KUMAR RAWAT,LUCKNOW,9415422547,yes';
+  Object.defineProperty(file, 'arrayBuffer', {
+    value: async () => new TextEncoder().encode(csv).buffer,
+  });
+  rtl.fireEvent.change(input, { target: { files: [file] } });
+
+  await rtl.waitFor(() =>
+    assert.equal(
+      container.querySelector('.broadcast-preview p')?.textContent,
+      'Vehicle update\n\nHello ASHOK KUMAR RAWAT, registration UP32PZ2125.',
+    ),
+  );
+  assert.equal((container.querySelector('#mt-12') as HTMLTextAreaElement).disabled, true);
+  assert.equal(sendButton().disabled, false);
+  rtl.fireEvent.click(sendButton());
+
+  await rtl.waitFor(() => assert.equal(gateway.bulkBodies.length, 1));
+  assert.deepEqual(gateway.bulkBodies[0].messages, [
+    {
+      chatId: '919415422547@c.us',
+      type: 'text',
+      content: { text: 'Vehicle update\n\nHello {{owner_name}}, registration {{reg_no}}.' },
+      variables: { owner_name: 'ASHOK KUMAR RAWAT', reg_no: 'UP32PZ2125' },
+    },
+  ]);
+});
 
 /** Render the page, switch to Bulk, and pick a recipients file of `size` bytes. */
 async function pickRecipientsFile(size: number): Promise<{ container: HTMLElement }> {
@@ -605,6 +685,55 @@ test('a bulk send with a picked image carries it in every item', async () => {
     assert.equal(item.content.image?.mimetype, 'image/png');
     assert.ok(item.content.image?.base64, 'expected the file inline');
   }
+});
+
+test('a personalized broadcast sends only opted-in rows with rendered spreadsheet values', async () => {
+  const gateway = stubGateway();
+  const container = await renderBulkAsWriter();
+  rtl.fireEvent.click(rtl.screen.getByRole('checkbox', { name: 'Personalize messages from a consented spreadsheet' }));
+
+  const input = container.querySelector('input[type="file"][accept=".xlsx,.xls,.csv,.json"]');
+  assert.ok(input, 'expected the structured broadcast file input');
+  const file = new window.File([], 'contacts.csv', { type: 'text/csv' });
+  const csv = 'MOBILE,CONSENT,OWNER NAME,REG NO\n9415422547,yes,Ashok,UP32PZ2125\n9415422548,no,Other,UP32PZ2126';
+  Object.defineProperty(file, 'arrayBuffer', {
+    value: async () => new TextEncoder().encode(csv).buffer,
+  });
+  rtl.fireEvent.change(input, { target: { files: [file] } });
+  await rtl.screen.findByText(/Eligible: 1 · Excluded: 1/);
+  type(container, '#mt-12', 'Hello {{owner_name}}, vehicle {{reg_no}}.');
+  await rtl.screen.findByText('Hello Ashok, vehicle UP32PZ2125.');
+  assert.equal(sendButton().disabled, false);
+
+  rtl.fireEvent.click(sendButton());
+  await rtl.waitFor(() => assert.equal(gateway.bulkBodies.length, 1));
+  assert.deepEqual(gateway.bulkBodies[0].messages, [
+    {
+      chatId: '919415422547@c.us',
+      type: 'text',
+      content: { text: 'Hello {{owner_name}}, vehicle {{reg_no}}.' },
+      variables: { owner_name: 'Ashok', reg_no: 'UP32PZ2125' },
+    },
+  ]);
+});
+
+test('a spreadsheet without an explicit consent column cannot be sent', async () => {
+  const gateway = stubGateway();
+  const container = await renderBulkAsWriter();
+  rtl.fireEvent.click(rtl.screen.getByRole('checkbox', { name: 'Personalize messages from a consented spreadsheet' }));
+
+  const input = container.querySelector('input[type="file"][accept=".xlsx,.xls,.csv,.json"]');
+  assert.ok(input, 'expected the structured broadcast file input');
+  const file = new window.File([], 'contacts.csv', { type: 'text/csv' });
+  Object.defineProperty(file, 'arrayBuffer', {
+    value: async () => new TextEncoder().encode('MOBILE,OWNER NAME\n9415422547,Ashok').buffer,
+  });
+  rtl.fireEvent.change(input, { target: { files: [file] } });
+  await rtl.screen.findByRole('alert');
+
+  type(container, '#mt-12', 'Hello {{owner_name}}');
+  assert.equal(sendButton().disabled, true);
+  assert.equal(gateway.bulkBodies.length, 0);
 });
 
 test('a bulk text over 4096 characters with no attachment keeps Send disabled and says why', async () => {

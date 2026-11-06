@@ -118,6 +118,14 @@ test('the theme button can return to following the system', () => {
   assert.equal(localStorage.getItem('openwa_theme'), 'system');
 });
 
+test('Broadcast has a dedicated sidebar destination', () => {
+  const { container } = renderLayout();
+  const link = rtl.screen.getByRole('link', { name: 'Broadcast' });
+
+  assert.equal(link.getAttribute('href'), '/broadcast');
+  assert.ok(container.querySelector('.nav-item[href="/broadcast"]'));
+});
+
 // Collapsing is a desktop preference: the phone drawer has no collapse control, so a flag left over from a wider
 // window must not strip its labels, and the window widening again must find the preference where it was left.
 test('a collapsed sidebar shows its labels in the phone drawer and collapses again on desktop', () => {

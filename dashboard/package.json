@@ -17,6 +17,7 @@
     "test:cov": "node --experimental-strip-types --test --test-timeout=120000 --experimental-test-coverage --test-coverage-exclude=\"src/**/*.test.ts\" --test-coverage-exclude=\"src/test-helpers/**\" \"src/**/*.test.ts\""
   },
   "dependencies": {
+    "@e965/xlsx": "^0.20.3",
     "@fontsource-variable/heebo": "^5.3.0",
     "@fontsource-variable/jetbrains-mono": "^5.3.0",
     "@fontsource-variable/noto-sans-arabic": "^5.3.0",
